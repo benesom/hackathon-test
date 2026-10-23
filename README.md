@@ -1,5 +1,7 @@
 # R setup for covariate adjustment hackathon
 
+assume that participants use the rstudio workbench
+
 ## Installation
 
 expect R version 4.4.1 (as on Rstudio workbench (bifrost))
