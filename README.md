@@ -1,15 +1,24 @@
-# R setup for covariate adjustment hackathon
+# Covariate adjustment hackathon repository
 
-assume that participants use the rstudio workbench
+This repository contains the R environment and the exercises for the hackathon. It is structured as follows:
 
-## Installation
+```text
+.
+├── setup-r.R       # installs the required R packages
+├── renv.lock       # pinned package versions
+├── renv/           # renv infrastructure (activated via .Rprofile)
+└── exercises/      # exercise sheets (Quarto documents)
+    └── solutions/  # solutions (uploaded later)
+```
 
-expect R version 4.4.1 (as on Rstudio workbench (bifrost))
+## R setup
 
-Execute `setup-r.R` file. should print the correct targeted and lava versions at the end
+The setup assumes that you work on RStudio Workbench (bifrost) and expects R 4.4.1, the version available there.
 
-installation might take a while, so please ensure that you have everything set up and running before the hackathon.
+Run `setup-r.R` from the repository root. It installs the packages pinned in `renv.lock` and, at the end, prints the installed versions of `targeted`  and `lava`.
+
+> **Note:** Installation can take a while. Please make sure that everything is set up and running before the hackathon.
 
 ## Exercises
 
-located in `exercises/`
+The exercise sheets are in `exercises/`. Solutions will be uploaded to `exercises/solutions/`.
