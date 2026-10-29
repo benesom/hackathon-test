@@ -1,0 +1,124 @@
+---
+title: "Exercises - Day 1"
+subtitle: "ANOVA and ANCOVA"
+author: "Author"
+date: "today"
+cache: false
+format:
+  html:
+    toc: true
+    toc-depth: 4
+---
+
+exercise goals:
+- TODO: fill out
+
+
+```{r}
+library(lava)
+
+set.seed(4242)
+sim_data <- function(n = 1000) {
+  w <- rnorm(n)
+  a <- rbinom(n, 1, 0.5)
+  y <- cos(w) + w*a + a + rnorm(n)
+  data.frame(y, a, w)
+}
+d <- sim_data(n = 500)
+```
+
+# Exercise 1 - ANOVA and ANCOVA
+
+## 1.1a ANOVA: Expected potential outcomes
+
+Implement the ANOVA estimator for the expected potential outcomes $E[Y(1)]$ and
+$E[Y(0)]$.
+
+```{r}
+lava_estimate_anova <- function(data, trt) {
+  # implement the anova estimator by modifying the theta and ic variables
+  theta <- NA
+  ic <- rep(0, nrow(data))
+
+  # you don't have to change the following line
+  estimate(
+    coef = theta, IC = ic, labels = paste0("E[Y(", trt, ")"), id = seq_along(ic)
+  )
+}
+
+est0 <- lava_estimate_anova(data = d, trt = 0)
+est1 <- lava_estimate_anova(data = d, trt = 1)
+c(est0, est1)
+```
+
+## 1.1b ANOVA: ATE
+
+Use the estimates of the expected potential outcomes to estimate the ATE, i.e.
+$E[Y(1)] - E[Y(0)]$.
+
+## 1.1c ANOVA: ATE from working model fit
+
+Estimate a linear model with response variable y, an intercept and treatment
+variable only. Provide the obtained object as the first argument to
+`lava::estimate`. Compare the output with the estimator from 1.1a and 1.1b. What
+do you observe?
+
+## 1.1d ANOVA: `lm` as a building block
+
+Obtain the expected potential outcome $E[Y(1)]$ from the `lm` fit of the previous
+exercise.
+
+## 1.2a ANCOVA
+
+Implement the ANCOVA estimator for the expected potential outcomes and ATE with
+the `lava::estimate` function. Adjust for baseline covariate `w`. Use `lm` to
+fit the working model `E[Y | A = a, W] = \alpha_a + \beta W`.
+
+### Introduction
+
+```{r}
+lava_estimate_ancova <- function(data, beta, trt) {
+  w_bar <- mean(data$w) # E[W]
+  wa_bar <- mean(data$w[data$a == trt]) # E[W | A = a]
+  pia <- mean(data$a == trt) # P(A = a)
+
+  # implement the anova estimator by modifying the theta and ic variables
+  theta <- 111
+  ic <- rep(0, nrow(data))
+
+  # you don't have to change the following line
+  estimate(
+    coef = theta, IC = ic, labels = paste0("E[Y(", trt, ")]"), id = seq_along(ic)
+  )
+}
+
+
+fit <- lm(y ~ a + w, data = d) # fit linear model (outcome regression)
+betahat <- coef(fit)[["w"]] # extract beta coefficient
+est0_ancova <- lava_estimate_ancova(data = d, beta = betahat, trt = 0)
+est1_ancova <- lava_estimate_ancova(data = d, beta = betahat, trt = 1)
+
+c(est0_ancova, est1_ancova)
+```
+
+## 1.2b ANCOVA: ATE from working model fit
+
+Estimate a linear model with response variable y, an intercept and main effects
+of treatment variable and covariate `w`. Provide the obtained object as the
+first argument to `lava::estimate`. Compare the output with the estimator from
+1.2a. What do you observe?
+
+## 1.3 ANCOVA: g-computation
+
+Use the `lava::expectation` function to implement g-computation for the expected
+potential outcomes and the ATE. Compare the estimates for the ATE that you
+directly obtain from the following `fit_glm` object with the g-computation
+estimates. What do you observe?
+
+### Introduction
+
+```{r}
+fit_glm <- glm(y ~ a + w, data = d)
+```
+
+

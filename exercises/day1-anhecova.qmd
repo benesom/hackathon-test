@@ -1,0 +1,156 @@
+---
+title: "Exercises - Day 1"
+author: "ANHECOVA and Monte-Carlo simulations"
+date: "today"
+cache: false
+format:
+  html:
+    toc: true
+    toc-depth: 4
+---
+
+exercise goals:
+- TODO: fill out
+
+
+```{r}
+library(lava)
+
+set.seed(4242)
+sim_data <- function(n = 1000) {
+  w <- rnorm(n)
+  a <- rbinom(n, 1, 0.5)
+  y <- cos(w) + w*a + a + rnorm(n)
+  data.frame(y, a, w)
+}
+d <- sim_data(n = 500)
+```
+
+
+# Exercise 2 - ANHECOVA
+
+## 2.1 ANHECOVA estimator
+
+Implement the ANHECOVA estimator for expected potential outcomes and ATE with
+the `lava::estimate` function. Adjust for baseline covariate `w`. Use `lm` to
+fit the working model `E[Y | A = a, W] = \alpha_a + \beta W`.
+
+Hint: can you re-use the `lava_estimate_ancova` function from the previous
+exercises?
+
+
+## 2.2 Model-based inference with covariate and treatment interactions
+
+Estimate a linear model with response variable y, an intercept, main effects of
+treatment variable and covariate `w` and their interactions. Provide the
+obtained object as the first argument to `lava::estimate` and inspect the
+output.
+
+What does the regression coefficient converge to for the defined data generation
+process? Does it converge to the ATE?
+
+## 2.3 G-computation with covariate and treatment interactions
+
+Use the `lava::expectation` function to implement g-computation for the expected
+potential outcomes and the ATE. Compare the estimates with the previous
+exercises. Are the point estimates and SEs for the ATE the same?
+
+Hint: remember to use a `glm` object to implement g-computation with the
+`expectation` function.
+
+## 2.4 Comparing estimators - estimator definition
+
+Implement each estimator in single function which accepts a `data` argument and
+returns a `lava::estimate` object for the treatment effect estimate (i.e. the
+target parameter)
+
+```{r}
+lava_estimate_anova <- function(data, trt) {
+  theta <- with(data, mean(y[a == trt]))
+  ic <- with(data, (a == trt) * (y - theta) / mean(a == trt))
+
+  estimate(
+    coef = theta, IC = ic, labels = paste0("E[Y(", trt, ")"), id = seq_along(ic)
+  )
+}
+
+
+estimator_anova <- function(data) {
+  est0 <- lava_estimate_anova(data = data, trt = 0)
+  est1 <- lava_estimate_anova(data = data, trt = 1)
+  est <- est1 - est0
+
+  return(estimate(est, labels = "ATE.anova"))
+}
+
+```
+
+Complete the following `estimator_anhecova` function in the same way as the
+above `estimator_anova` function.
+
+```{r}
+estimator_anhecova <- function(data) {
+  # write the implementation here
+  est <- estimate(
+    coef = 111,
+    IC = rep(0, nrow(data)),
+    id = seq_len(nrow(data))
+  )
+
+  return(estimate(est, labels = "ATE.anhecova"))
+}
+```
+
+## 2.5 Comparing estimators - Large data sample
+
+Compare the ANOVA and ANHECOVA estimators with the following large data
+sample. Which estimator has the lower SE? Can you also compute the relative
+efficiency of the ANHECOVA estimator relative to the ANOVA estimator?
+
+```{r}
+d_largesample <- sim_data(n = 1e5)
+```
+
+## 2.6 Comparing estimators - Monte-Carlo simulations I
+
+Perform a Monte-Carlo simulation to compare the ANOVA and ANHECOVA estimators
+for a sample size $n = 300$. Use `R = 1e3` Monte-Carlo replications. Inspect the
+generated `res` object. Which estimator is more efficient and why? Are there
+indications that we should increase the number of Monte-Carlo replications?
+
+```{r}
+onerun <- function(n) {
+  d <- sim_data(n)
+  c(
+    estimator_anova(data = d),
+    estimator_anhecova(data = d)
+  )
+}
+
+future::plan("multicore")
+res <- sim(onerun, R = 10, args = list(n = 200), seed = 42)
+res
+```
+
+
+## 2.7 Comparing estimators - Monte-Carlo simulations II
+
+Using the output of the Monte-Carlo simulation, compute the relative effiency of
+the ANHECOVA estimator with respect to the ANOVA estimator.
+
+## 2.8  Comparing estimators - Monte-Carlo simulations III
+
+Use the `true` argument of the `summary` method to investigate the bias and
+coverage. Note that you first have to derive the true ATE for the data
+generation process that we defined in the `sim_data` function.
+
+## 2.9 Large sample and Monte-Carlo simulation comparison
+
+It could also be nice to include this as an exercise to test the participants
+understanding about what the SD and SE rows of the previous exercises mean.
+
+## 3.0 G-computation and ANHECOVA comparison
+
+Also show with large sample that g_computation and ANHECOVA are asymptotically
+equivalent when they use the same working model.
+
