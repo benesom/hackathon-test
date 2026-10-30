@@ -128,7 +128,7 @@ onerun <- function(n) {
 }
 
 future::plan("multicore")
-res <- sim(onerun, R = 10, args = list(n = 200), seed = 42)
+res <- sim(onerun, R = 2, args = list(n = 111), seed = 42)
 res
 ```
 

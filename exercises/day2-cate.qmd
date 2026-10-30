@@ -1,0 +1,146 @@
+---
+title: "Exercises - Day 2"
+subtitle: "targeted::cate"
+author: "BKTS"
+date: "today"
+cache: false
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    toc-expand: 4
+---
+
+exercise goals:
+- TODO: fill out
+
+```{r}
+library(lava)
+library(targeted)
+```
+
+```{r}
+set.seed(4242)
+sim_data <- function(n = 1000, pi = 0.5) {
+  w <- rnorm(n)
+  a <- rbinom(n, 1, pi)
+  y <- cos(w) + w*a + a + rnorm(n)
+  data.frame(y, a, w)
+}
+d <- sim_data(n = 500)
+```
+
+# Exercise 1 - Estimating the ATE with `targeted::cate`
+
+## 1.1. cate: ANOVA
+
+Implement the ANOVA estimator for the ATE using `targeted::cate`. Familiarize
+yourself with the output of `cate`.`
+
+## 1.3. cate: ANOVA
+
+Use the output of `cate` to estimate $E[Y(0)] - E[Y(1)]$.
+
+## 1.4. cate: ANOVA
+
+Implement the estimator in the following `estimator_anova` function. The
+function should only return the estimate for $E[Y(1)] - E[Y(0)]$, with the label
+`ATE.anova`. The data generation process defined in `sim_data` is the same as in
+the exercises from day 1. This allows you to compare the estimates with your own
+implementation.
+
+```{r}
+estimator_anova <- function(data) {
+  # replace the following placeholder code
+  estimate(coef = 111, IC = 0, labels = "ATE.anova")
+}
+estimator_anova(d)
+```
+
+## 1.5 cate: ANCOVA and ANHECOVA
+
+Implement the ANCOVA and ANHECOVA estimators, adjusting only for baseline
+covarate `w`, in the same way as the ANOVA estimator in the previous exercise.
+
+```{r}
+estimator_ancova <- function(data) {
+  estimate(coef = 111, IC = 0, labels = "ATE.ancova")
+}
+
+estimator_anhecova <- function(data) {
+  estimate(coef = 111, IC = 0, labels = "ATE.anhecova")
+}
+```
+
+## 1.6 Monte-Carlo simulation: balanced simple randomization
+
+Implement a Monte-Carlo simulation with the defined ANOVA, ANCOVA and ANHECOVA
+estimators and the data generation process `sim_data` with $n = 300$ and $\pi =
+P(A = 1) = 0.5$. Perform `R = 1e3` Monte-Carlo replications and investigate the
+simulation results. Do the results look like what we have observed in
+yesterday's exercises? Remember that you can use the `summary` method to
+summarize the simulation results.
+
+TODO: this should maybe also be changed to be a large sample comparison
+
+## 1.7. Large sample comparison: unbalanced simple randomization
+
+Compare the three estimators by simulating a large sample of 1e5 subjects for a
+design with 2:1 randomization $\pi = P(A=1) = 2/3$. Do the results look
+different compared to the balanced simple randomization design from the previous
+exercises? Why?
+
+## 1.8 Stratified randomization: ATE
+
+Consider the following data generation process with block randomization
+
+```{r}
+sim_data_stratified <- function(n, block_size = 6L) {
+  w <- rnorm(n)
+  s <- as.integer(w < -0.67) # stratification variable as grouping of baseline
+                             # covariate w
+  a <- integer(n)
+
+  for (stratum in unique(s)) {
+    idx <- which(s == stratum)
+
+    blocks <- split(idx, ceiling(seq_along(idx) / block_size))
+    for (block in blocks) {
+      allocation <- rep(sample(0:1), length.out = block_size)
+      allocation <- sample(allocation)
+
+      a[block] <- allocation[seq_along(block)]
+    }
+  }
+
+  y <- cos(w) + w * a + a + rnorm(n)
+  data.frame(y, a, w, s = as.factor(s))
+}
+
+d_stratified <- sim_data_stratified(n = 1e3)
+```
+
+Use `targeted::cate` to estimate the ATE with the ANHECOVA estimator, adjusting
+for baseline covariate `w` for the following large data sample.
+
+```{r}
+d_stratified <- sim_data_stratified(n = 1e5)
+```
+
+## 1.9 Stratified randomization: ANHECOVA and ANOVA comparison
+
+Compare the ANHECOVA and ANOVA implementation with `cate` with the following
+model-based estimator that adjusts for the stratification variable. Use the
+same large data sample from the previous exercise. Describe what you observe.
+
+
+```{r}
+fit_model <- glm(y ~ a + s, data = d_stratified)
+```
+
+## 1.10 Conditional average treatment effect (CATE)
+
+Use `cate` to estimate $\psi_1 = E[Y(1) | S = 1] - E[Y(0) | S = 1]$ and $\psi_0 = E[Y(1) | S =
+0] - E[Y(0) | S = 0]$. Use the same working model as the ANHECOVA estimator of
+the previous exercise.
+
